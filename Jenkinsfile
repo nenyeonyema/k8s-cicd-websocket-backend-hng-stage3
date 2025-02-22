@@ -26,22 +26,36 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Deploy Test Pod') {
             steps {
-                script {
-                    sh "kubectl exec -it test-pod -- python test_helloworld.py"
+                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                    sh '''
+                    export KUBECONFIG=$KUBECONFIG
+                    kubectl apply -f k8s/test-pod.yml
+                    '''
                 }
             }
         }
 
+        stage('Run Tests in Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                    sh '''
+                    export KUBECONFIG=$KUBECONFIG
+                    which kubectl  # Check if kubectl is accessible
+                    kubectl exec -it test-pod -- python test_helloworld.py
+                    '''
+                }
+            }
+        }
 
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: "${KUBE_CONFIG_ID}", variable: 'KUBECONFIG')]) {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
+                    kubectl apply -f k8s/deployment.yml
+                    kubectl apply -f k8s/service.yml
                     '''
                 }
             }
