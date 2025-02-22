@@ -43,7 +43,7 @@ pipeline {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG
                     which kubectl  # Check if kubectl is accessible
-                    kubectl exec -it test-pod -- python test_helloworld.py
+                    kubectl exec -it test-runner -- python test_helloworld.py
                     '''
                 }
             }
@@ -65,9 +65,14 @@ pipeline {
 }
 
     post {
-        failure {
-            echo "Pipeline failed. Check logs."
-        }
+        failure {  // Only delete if pipeline fails
+            withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                sh '''
+                export KUBECONFIG=$KUBECONFIG
+                echo "Pipeline failed! Cleaning up test pod..."
+                kubectl delete pod -n testing test-runner || true
+                '''
+            }
         success {
             echo "Deployment successful!"
         }
