@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "nenyeonyema/helloworld:latest"
-        DOCKER_CRED_ID = credentials('docker-login-cred')
-        KUBE_CONFIG_ID = credentials('kubeconfig-cred')
+        DOCKER_CRED_ID = 'docker-login-cred'
+        KUBE_CONFIG_ID = 'kubeconfig-cred'
     }
 
     stages {
@@ -16,16 +16,15 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'docker-login-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
-                    echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     docker build -t nenyeonyema/helloworld:latest .
                     docker push nenyeonyema/helloworld:latest
                     '''
                 }
             }
         }
-
 
         stage('Run Tests') {
             steps {
