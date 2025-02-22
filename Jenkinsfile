@@ -24,6 +24,22 @@ pipeline {
             }
         }
 
+        stage('Deploy to Kubernetes Test Environment') {
+            steps {
+                script {
+                    sh "kubectl apply -f test-deployment.yaml"
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    sh "kubectl exec -it test-pod -- python test_helloworld.py"
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
@@ -38,3 +54,12 @@ pipeline {
     }
 }
 
+    post {
+        failure {
+            echo "Pipeline failed. Check logs."
+        }
+        success {
+            echo "Deployment successful!"
+        }
+    }
+}
