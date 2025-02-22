@@ -1,72 +1,40 @@
-pipe                                                                                   pipeline {
-
+pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "nenyeonyema/helloworld"
-        DOCKER_TAG = "latest"
-        KUBE_CONFIG = "$HOME/.kube/config"
+        DOCKER_IMAGE = "nenyeonyema/helloworld:latest"
     }
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/your-repo/k8s-cicd-websocket-backend-hng-stage3.git'
+                git 'https://github.com/nenyeonyema/k8s-cicd-websocket-backend-hng-stage3'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build & Push') {
             steps {
-                script {
-                    sh "docker build -t $DOCKER_IMAGE:$DOCKER_TAG ."
+                withCredentials([usernamePassword(credentialsId: 'docker-login-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker build -t $DOCKER_IMAGE .
+                        docker push $DOCKER_IMAGE
+                    """
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    sh "docker login -u your-dockerhub-username -p your-dockerhub-password"
-                    sh "docker push $DOCKER_IMAGE:$DOCKER_TAG"
+                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
+                    sh """
+                        export KUBECONFIG=$KUBECONFIG
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                    """
                 }
             }
-        }
-
-        stage('Deploy to Kubernetes Test Environment') {
-            steps {
-                script {
-                    sh "kubectl apply -f test-deployment.yaml"
-                }
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                script {
-                    sh "kubectl exec -it test-pod -- python test_helloworld.py"
-                }
-            }
-        }
-
-        stage('Deploy to Production') {
-            when {
-                expression { return currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-            }
-            steps {
-                script {
-                    sh "kubectl apply -f deployment.yaml"
-                    sh "kubectl apply -f service.yaml"
-                }
-            }
-        }
-    }
-
-    post {
-        failure {
-            echo "Pipeline failed. Check logs."
-        }
-        success {
-            echo "Deployment successful!"
         }
     }
 }
+
