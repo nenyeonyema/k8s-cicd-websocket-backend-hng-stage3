@@ -27,7 +27,7 @@ pipeline {
         stage('Deploy to Kubernetes Test Environment') {
             steps {
                 script {
-                    sh "kubectl apply -f test-deployment.yaml"
+                    sh "kubectl apply -f k8s/test-pod.yml"
                 }
             }
         }
@@ -45,8 +45,8 @@ pipeline {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                     sh """
                         export KUBECONFIG=$KUBECONFIG
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
+                        kubectl apply -f k8s/deployment.yml
+                        kubectl apply -f k8s/service.yml
                     """
                 }
             }
@@ -62,4 +62,3 @@ pipeline {
             echo "Deployment successful!"
         }
     }
-}
