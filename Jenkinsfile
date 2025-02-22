@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "nenyeonyema/helloworld:latest"
+        DOCKER_CRED_ID = credentials('docker-login-cred')
+        KUBE_CONFIG_ID = credentials('kubeconfig-cred')
     }
 
     stages {
@@ -14,23 +16,16 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-login-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker build -t $DOCKER_IMAGE .
-                        docker push $DOCKER_IMAGE
-                    """
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CRED_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                    echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                    docker build -t nenyeonyema/helloworld:latest .
+                    docker push nenyeonyema/helloworld:latest
+                    '''
                 }
             }
         }
 
-        stage('Deploy to Kubernetes Test Environment') {
-            steps {
-                script {
-                    sh "kubectl apply -f k8s/test-pod.yml"
-                }
-            }
-        }
 
         stage('Run Tests') {
             steps {
@@ -40,17 +35,19 @@ pipeline {
             }
         }
 
+
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
-                    sh """
-                        export KUBECONFIG=$KUBECONFIG
-                        kubectl apply -f k8s/deployment.yml
-                        kubectl apply -f k8s/service.yml
-                    """
+                withCredentials([file(credentialsId: "${KUBE_CONFIG_ID}", variable: 'KUBECONFIG')]) {
+                    sh '''
+                    export KUBECONFIG=$KUBECONFIG
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
+                    '''
                 }
             }
         }
+
     }
 }
 
