@@ -74,7 +74,7 @@ pipeline {
     }
 
     post {
-        failure {  // Cleanup only if the pipeline fails
+        always {  // Cleanup only if the pipeline fails
             withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                 sh '''
                 export KUBECONFIG=$KUBECONFIG
@@ -83,9 +83,13 @@ pipeline {
                 '''
             }
         }
+        failure {
+            echo "Pipeline failed!"
+        }
 
         success {
             echo "Deployment successful!"
         }
     }
+
 }
