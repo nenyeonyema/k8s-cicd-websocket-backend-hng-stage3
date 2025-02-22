@@ -43,7 +43,7 @@ pipeline {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG
                     which kubectl  # Check if kubectl is accessible
-                    kubectl exec -it test-runner -- python test_helloworld.py
+                    kubectl exec -it test-runner -n testing -- python test_helloworld.py
                     '''
                 }
             }
