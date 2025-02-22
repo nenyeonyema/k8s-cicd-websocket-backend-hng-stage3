@@ -72,7 +72,6 @@ pipeline {
         }
 
     }
-}
 
     post {
         failure {  // Cleanup only if the pipeline fails
