@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/nenyeonyema/k8s-cicd-websocket-backend-hng-stage3'
+                git clone 'https://github.com/nenyeonyema/k8s-cicd-websocket-backend-hng-stage3'
             }
         }
 
