@@ -26,28 +26,39 @@ pipeline {
             }
         }
 
-        stage('Deploy Test Pod') {
+    stages {
+        stage('Deploy Test Job') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG
-                    kubectl apply -f k8s/test-pod.yml
+
+                    # Ensure previous test job is deleted before applying new one
+                    kubectl delete job -n testing test-job --ignore-not-found=true
+
+                    # Apply the Kubernetes job to run tests
+                    kubectl apply -f k8s/test-job.yml
                     '''
                 }
             }
         }
 
-        stage('Run Tests in Kubernetes') {
+        stage('Run Tests') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                     sh '''
                     export KUBECONFIG=$KUBECONFIG
-                    which kubectl  # Check if kubectl is accessible
-                    kubectl exec test-runner -n testing -- python test_helloworld.py
+
+                    echo "Waiting for test-job to complete..."
+                    kubectl wait --for=condition=complete --timeout=120s job/test-job -n testing || exit 1
+
+                    echo "Fetching test logs..."
+                    kubectl logs -n testing job/test-job
                     '''
                 }
             }
         }
+
 
         stage('Deploy to Kubernetes') {
             steps {
@@ -65,14 +76,16 @@ pipeline {
 }
 
     post {
-        failure {  // Only delete if pipeline fails
+        failure {  // Cleanup only if the pipeline fails
             withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                 sh '''
                 export KUBECONFIG=$KUBECONFIG
-                echo "Pipeline failed! Cleaning up test pod..."
-                kubectl delete pod -n testing test-runner || true
+                echo "Pipeline failed! Cleaning up test job..."
+                kubectl delete job -n testing test-job || true
                 '''
             }
+        }
+
         success {
             echo "Deployment successful!"
         }
