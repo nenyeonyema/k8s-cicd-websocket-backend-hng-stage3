@@ -26,7 +26,6 @@ pipeline {
             }
         }
 
-    stages {
         stage('Deploy Test Job') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
