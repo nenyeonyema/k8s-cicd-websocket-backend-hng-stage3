@@ -12,7 +12,6 @@ A distributed system for testing Git commits in isolated Kubernetes environments
 - **Custom Test Commands** - Override default test behavior
 - **Failure Forensics** - Detailed error logging and output capture
 
-## 🏗 Architecture
 
 ```mermaid
 sequenceDiagram
