@@ -42,7 +42,7 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Run Test') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                     sh '''
