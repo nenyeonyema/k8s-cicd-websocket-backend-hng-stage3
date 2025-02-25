@@ -59,7 +59,7 @@ pipeline {
         }
 
 
-        stage('Deploy Production to Kubernetes') {
+        stage('Deploy to Production on Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: "${KUBE_CONFIG_ID}", variable: 'KUBECONFIG')]) {
                     sh '''
