@@ -26,7 +26,7 @@ pipeline {
             }
         }
 
-        stage('Deploy Test Job') {
+        stage('Deploy Test Job to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig-cred', variable: 'KUBECONFIG')]) {
                     sh '''
@@ -59,7 +59,7 @@ pipeline {
         }
 
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy Production to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: "${KUBE_CONFIG_ID}", variable: 'KUBECONFIG')]) {
                     sh '''
